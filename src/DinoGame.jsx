@@ -10,33 +10,39 @@ const DinoGame = () => {
 
   const canvasRef = useRef(null);
   const gameRef = useRef({
-    dino: { x: 50, y: 150, w: 44, h: 47, dy: 0, jump: -12, gravity: 0.6 },
+    dino: { x: 50, y: 150, w: 40, h: 40, dy: 0, jump: -12, gravity: 0.6, color: '#A020F0' }, // Mor Dino
     obstacles: [],
     speed: 6,
     frameCount: 0,
-    frameId: null
+    frameId: null,
+    colors: { // Neon Renk Paleti
+        dino: '#A020F0', // Purpleguy Moru
+        obstacle: '#00FFFF', // Neon Turkuaz
+        ground: '#555555',
+        shadow: '#A020F0'
+    }
   });
-
-  // --- BRAVE VE TABLET DOSTU SPRITE YÜKLEME ---
-  const spriteImg = new Image();
-  spriteImg.crossOrigin = "anonymous"; // Brave kalkanlarını aşmak için kritik satır!
-  spriteImg.src = 'https://raw.githubusercontent.com/wayou/t-rex-runner/master/assets/default_100_percent/100-offline-sprite.png';
 
   // Liderlik Tablosu Verisi
   useEffect(() => {
-    const q = query(collection(db, "dino_leaderboard"), orderBy("score", "desc"), limit(5));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setLeaderboard(snapshot.docs.map(doc => doc.data()));
-    });
-    return () => unsubscribe();
-  }, []);
+    // Brave'in Firebase'i engelleme ihtimaline karşı try-catch
+    try {
+      const q = query(collection(db, "dino_leaderboard"), orderBy("score", "desc"), limit(5));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        setLeaderboard(snapshot.docs.map(doc => doc.data()));
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.error("Firebase bağlantı hatası veya Brave tarafından engellendi:", e);
+      // Firebase'siz çalıştırmak için boş bir liderlik tablosu ayarla
+      setLeaderboard([{ name: "Local", score: highScore, signature: "Brave Engelledi" }]);
+    }
+  }, [highScore]); // highScore değiştiğinde leaderboard'ı güncelle
 
   const startGame = (e) => {
     if (e) e.stopPropagation(); 
     gameRef.current.obstacles = [];
     gameRef.current.speed = 6;
-    gameRef.current.dino.y = 150;
-    gameRef.current.dino.dy = 0;
     gameRef.current.frameCount = 0;
     setScore(0);
     setGameState('PLAYING');
@@ -47,64 +53,75 @@ const DinoGame = () => {
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const g = gameRef.current;
 
     const update = () => {
-      const g = gameRef.current;
       g.frameCount++;
 
       // Dino Fiziği
       g.dino.dy += g.dino.gravity;
       g.dino.y += g.dino.dy;
-      if (g.dino.y + g.dino.h > canvas.height - 10) {
-        g.dino.y = canvas.height - 10 - g.dino.h;
-        g.dino.dy = 0;
-      }
+      if (g.dino.y > 150) { g.dino.y = 150; g.dino.dy = 0; }
 
-      // Engel Oluşturma
+      // Engel Oluşturma (Tamamen kodla çiziliyor)
       if (g.frameCount % 100 === 0) {
-        const isBird = Math.random() > 0.8;
-        g.obstacles.push({
-          x: canvas.width,
-          y: isBird ? canvas.height - 80 : canvas.height - 50,
-          w: isBird ? 46 : 34,
-          h: isBird ? 40 : 50,
-          type: isBird ? 'BIRD' : 'CACTUS',
-          spriteX: isBird ? 264 : 446
-        });
+        const type = Math.random() > 0.5 ? 'CACTUS' : 'BIRD';
+        let obstacle = { x: 800, type: type, color: g.colors.obstacle };
+        
+        if (type === 'CACTUS') {
+            obstacle.w = 20; obstacle.h = 40; obstacle.y = 160 - obstacle.h;
+        } else { // Bird
+            obstacle.w = 30; obstacle.h = 20; obstacle.y = Math.random() < 0.5 ? 100 : 130;
+        }
+        g.obstacles.push(obstacle);
       }
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, 800, 200);
 
-      // Zemin Çizgisi
-      ctx.strokeStyle = '#444';
-      ctx.beginPath(); ctx.moveTo(0, canvas.height - 10); ctx.lineTo(canvas.width, canvas.height - 10); ctx.stroke();
+      // --- Zemin Çizgisi (Neon) ---
+      ctx.beginPath();
+      ctx.moveTo(0, 160);
+      ctx.lineTo(800, 160);
+      ctx.strokeStyle = g.colors.ground;
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-      // Dinozor Animasyonu
-      const dinoFrame = (Math.floor(g.frameCount / 5) % 2 === 0) ? 1854 : 1942;
-      ctx.drawImage(spriteImg, dinoFrame, 2, 88, 94, g.dino.x, g.dino.y, g.dino.w, g.dino.h);
+      // --- NEON DİNOZOR ÇİZİMİ (Kodla!) ---
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = g.colors.shadow;
+      ctx.fillStyle = g.colors.dino;
+      ctx.fillRect(g.dino.x, g.dino.y, g.dino.w, g.dino.h);
+      ctx.shadowBlur = 0; // Gölgeyi sıfırla ki diğerleri etkilenmesin
 
-      // Engelleri Güncelle ve Çiz
+      // Engelleri Güncelle ve Çiz (Neon)
       g.obstacles.forEach((obs, i) => {
         obs.x -= g.speed;
-        ctx.drawImage(spriteImg, obs.spriteX, 2, 90, 90, obs.x, obs.y, obs.w, obs.h);
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = obs.color;
+        ctx.fillStyle = obs.color;
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+        ctx.shadowBlur = 0;
 
-        // Çarpışma Kontrolü (Biraz boşluk bırakarak)
-        if (g.dino.x < obs.x + obs.w - 10 && 
-            g.dino.x + g.dino.w - 10 > obs.x && 
-            g.dino.y < obs.y + obs.h - 10 && 
-            g.dino.y + g.dino.h - 10 > obs.y) {
+        // Çarpışma Kontrolü
+        if (g.dino.x < obs.x + obs.w && 
+            g.dino.x + g.dino.w > obs.x && 
+            g.dino.y < obs.y + obs.h && 
+            g.dino.y + g.dino.h > obs.y) {
           
           setGameState('GAMEOVER');
           if (score > highScore) {
             setHighScore(score);
             localStorage.setItem('dinoHiScore', score.toString());
           }
-          addDoc(collection(db, "dino_leaderboard"), {
-            name: "Efe",
-            score: score,
-            signature: "Purpleguy © 2026 - tablet power",
-            timestamp: serverTimestamp()
-          });
+          // Firebase'e sadece Brave engellemediyse kaydet
+          try {
+            addDoc(collection(db, "dino_leaderboard"), {
+              name: "Efe",
+              score: score,
+              signature: "Purpleguy © 2026 - tablet power",
+              timestamp: serverTimestamp()
+            });
+          } catch (e) { console.log("Skor Firebase'e kaydedilemedi (Brave engeli)."); }
         }
         if (obs.x + obs.w < 0) g.obstacles.splice(i, 1);
       });
@@ -115,27 +132,39 @@ const DinoGame = () => {
     };
 
     update();
-    return () => cancelAnimationFrame(gameRef.current.frameId);
+    return () => cancelAnimationFrame(g.frameId);
   }, [gameState, score, highScore]);
 
   // Klavye ve Dokunmatik Kontroller
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
-        if (gameState === 'PLAYING' && gameRef.current.dino.y > 140) {
-          gameRef.current.dino.dy = gameRef.current.dino.jump;
-        } else if (gameState !== 'PLAYING') {
-          startGame();
-        }
+    const handleAction = (e) => {
+      // Sadece 'Space' veya 'ArrowUp' için klavye olayı dinle
+      if (e.type === 'keydown' && (e.code !== 'Space' && e.code !== 'ArrowUp')) return;
+
+      if (gameState === 'PLAYING' && gameRef.current.dino.y > 140) {
+        gameRef.current.dino.dy = gameRef.current.dino.jump;
+      } else if (gameState !== 'PLAYING') {
+        startGame();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    window.addEventListener('keydown', handleAction);
+    // Canvas veya ekran tıklaması için
+    const canvasElement = canvasRef.current;
+    if (canvasElement) {
+        canvasElement.addEventListener('click', handleAction);
+    }
+    
+    return () => {
+        window.removeEventListener('keydown', handleAction);
+        if (canvasElement) {
+            canvasElement.removeEventListener('click', handleAction);
+        }
+    };
   }, [gameState]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-purple-500 font-mono select-none overflow-hidden" 
-         onClick={() => { if(gameState === 'PLAYING') gameRef.current.dino.dy = gameRef.current.dino.jump; }}>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-purple-500 font-mono select-none overflow-hidden">
       
       {/* ÜST PANEL */}
       <div className="mb-6 flex gap-12 text-lg font-bold">
@@ -143,8 +172,8 @@ const DinoGame = () => {
         <span className="text-white">{score.toString().padStart(5, '0')}</span>
       </div>
 
-      <div className="relative w-full max-w-3xl aspect-[3/1] bg-zinc-950 border-y-2 border-purple-900/40 shadow-2xl">
-        <canvas ref={canvasRef} width={800} height={200} className="w-full h-full" />
+      <div className="relative w-full max-w-3xl aspect-[4/1] bg-zinc-950 border-y-2 border-purple-900/40 shadow-2xl">
+        <canvas ref={canvasRef} width={800} height={200} className="w-full h-full bg-gradient-to-t from-gray-900 to-black" />
 
         {/* ANA MENÜ VE SKOR TABLOSU */}
         {gameState !== 'PLAYING' && (
