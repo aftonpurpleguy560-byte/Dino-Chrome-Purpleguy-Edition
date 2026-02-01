@@ -16,19 +16,26 @@ const DinoGame = () => {
     sprite.current.src = 'https://raw.githubusercontent.com/wayou/t-rex-runner/master/assets/default_100_percent/100-offline-sprite.png';
     sprite.current.crossOrigin = "anonymous";
     
-    const q = query(collection(db, "dino_leaderboard"), orderBy("score", "desc"), limit(5));
-    const unsubscribe = onSnapshot(q, (s) => {
-      setLeaderboard(s.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, (err) => console.error("Sıralama hatası:", err));
-    return () => unsubscribe();
+    // Hata korumalı sıralama çekme
+    try {
+      const q = query(collection(db, "dino_leaderboard"), orderBy("score", "desc"), limit(5));
+      const unsubscribe = onSnapshot(q, (s) => {
+        setLeaderboard(s.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, (error) => {
+        console.warn("Sıralama şu an çekilemiyor:", error);
+        setLeaderboard([]); // Hata olsa bile listeyi boşaltıp devam et
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      setLeaderboard([]);
+    }
   }, []);
 
   const start = () => {
-    if(!playerName.trim()) { alert("Lütfen ismini yaz, Purpleguy!"); return; }
+    if(!playerName.trim()) { alert("İsmini yazmalısın Efe!"); return; }
     localStorage.setItem('pName', playerName);
     gameRef.current = { dino: { x: 50, y: 150, w: 44, h: 47, dy: 0 }, obstacles: [], speed: 6, frame: 0 };
-    setScore(0); 
-    setGameState('PLAYING');
+    setScore(0); setGameState('PLAYING');
   };
 
   useEffect(() => {
@@ -39,16 +46,14 @@ const DinoGame = () => {
       g.dino.dy += 0.6; g.dino.y += g.dino.dy;
       if (g.dino.y > 150) { g.dino.y = 150; g.dino.dy = 0; }
       if (g.frame % 100 === 0) g.obstacles.push({ x: 800, y: 155, w: 34, h: 50 });
-
       ctx.clearRect(0, 0, 800, 200);
       ctx.drawImage(sprite.current, (Math.floor(g.frame/5)%2?1854:1942), 2, 88, 94, g.dino.x, g.dino.y, 44, 47);
-      
       g.obstacles.forEach((o, i) => {
         o.x -= g.speed; ctx.drawImage(sprite.current, 446, 2, 90, 90, o.x, o.y, 34, 50);
         if (g.dino.x < o.x + 25 && g.dino.x + 35 > o.x && g.dino.y < o.y + 40 && g.dino.y + 40 > o.y) {
           setGameState('OVER');
           if (score > highScore) { setHighScore(score); localStorage.setItem('dinoHiScore', score); }
-          addDoc(collection(db, "dino_leaderboard"), { name: playerName, score, timestamp: serverTimestamp() });
+          addDoc(collection(db, "dino_leaderboard"), { name: playerName, score, timestamp: serverTimestamp() }).catch(() => {});
         }
         if (o.x < -50) g.obstacles.splice(i, 1);
       });
@@ -69,19 +74,18 @@ const DinoGame = () => {
         {gameState !== 'PLAYING' && (
           <div className="menu-overlay">
             <h1 className="menu-title">PURPLEGUY DINO</h1>
-            <input type="text" placeholder="İSMİNİ YAZ..." value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)} className="name-input" />
+            <input type="text" placeholder="İSMİNİ YAZ..." value={playerName} onChange={(e) => setPlayerName(e.target.value)} className="name-input" />
             <button onClick={(e) => { e.stopPropagation(); start(); }} className="neon-btn">
-              {gameState === 'MENU' ? 'OYUNA BAŞLA' : 'REKORU TAZELE'}
+              {gameState === 'MENU' ? 'OYUNA BAŞLA' : 'YENİDEN DENE'}
             </button>
             <div className="leaderboard-card">
-              <p className="leaderboard-title italic">DÜNYA SIRALAMASI</p>
-              {leaderboard.map((l, i) => (
+              <p className="leaderboard-title">DÜNYA SIRALAMASI</p>
+              {leaderboard.length > 0 ? leaderboard.map((l, i) => (
                 <div key={i} className="leaderboard-item">
                   <span>{i+1}. {l.name}</span>
                   <span className="text-white font-bold">{l.score}</span>
                 </div>
-              ))}
+              )) : <div className="text-xs text-zinc-500 text-center">Sıralama yükleniyor...</div>}
             </div>
           </div>
         )}
