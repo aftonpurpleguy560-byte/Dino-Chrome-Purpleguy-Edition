@@ -2,18 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tablet ve PWA Temel Ayarları */
+/* Temel Arka Plan ve Tablet Sabitleme */
 body { 
   margin: 0; 
-  background: #000; 
+  background-color: #000 !important; 
   color: #a855f7; 
   font-family: 'Courier New', monospace; 
   overflow: hidden; 
   touch-action: none; 
   height: 100vh;
+  width: 100vw;
 }
 
-/* Ana Konteynır */
+/* Ana Oyun Konteynırı */
 .game-container { 
   display: flex; 
   flex-direction: column; 
@@ -21,9 +22,11 @@ body {
   justify-content: center; 
   height: 100vh; 
   width: 100vw;
+  background-color: #000;
+  user-select: none;
 }
 
-/* HI ve Canlı Skor Paneli */
+/* HI ve Mevcut Skor Paneli */
 .score-board { 
   width: 100%; 
   max-width: 800px; 
@@ -33,9 +36,10 @@ body {
   font-weight: bold; 
   font-size: 1.2rem;
   margin-bottom: 10px;
+  text-transform: uppercase;
 }
 
-/* Oyun Alanı ve Siyah Ekran Çözümü */
+/* Oyun Sahnesi (Canvas) Çerçevesi */
 .canvas-wrapper { 
   position: relative; 
   width: 100%; 
@@ -44,11 +48,12 @@ body {
   background: #050505; 
   border-top: 2px solid #3b0764; 
   border-bottom: 2px solid #3b0764; 
+  box-shadow: 0 0 50px rgba(168, 85, 247, 0.1);
 }
 
 canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 
-/* Menü Katmanı */
+/* Mor Menü Katmanı */
 .menu-overlay { 
   position: absolute; 
   inset: 0; 
@@ -58,77 +63,83 @@ canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; 
   align-items: center; 
   justify-content: center; 
   z-index: 100;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(8px);
 }
 
-/* Mor Neon Başlık */
+/* Başlık ve Alt Yazı */
 .menu-title { 
-  font-size: 2.5rem; 
+  font-size: 2.8rem; 
   font-weight: 900; 
   font-style: italic; 
-  margin-bottom: 5px; 
+  margin-bottom: 0; 
   text-shadow: 0 0 20px #7e22ce;
   color: #9333ea;
+  letter-spacing: -2px;
 }
 
 .menu-subtitle {
   font-size: 10px;
   color: #581c87;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   text-transform: uppercase;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  font-weight: bold;
 }
 
-/* MOR NEON BUTON (O beyazlıktan kurtuluyoruz) */
+/* MOR NEON BUTON - Beyazlığı bitiren asıl kısım */
 .neon-btn { 
-  background: #7e22ce; 
-  color: #fff; 
-  border: none; 
-  padding: 15px 50px; 
+  background: #7e22ce !important; 
+  color: #fff !important; 
+  border: none !important; 
+  padding: 16px 55px; 
   border-radius: 50px; 
-  font-weight: bold; 
-  font-size: 14px;
+  font-weight: 900; 
+  font-size: 15px;
   text-transform: uppercase;
-  box-shadow: 0 0 25px rgba(168, 85, 247, 0.6); 
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.7); 
   cursor: pointer; 
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.neon-btn:active { transform: scale(0.9); box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+.neon-btn:active { 
+  transform: scale(0.92); 
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); 
+}
 
-/* Dünya Sıralaması Kartı */
+/* Dünya Sıralaması Listesi */
 .leaderboard-card { 
-  margin-top: 25px; 
-  width: 250px; 
-  background: rgba(88, 28, 135, 0.15); 
+  margin-top: 30px; 
+  width: 260px; 
+  background: rgba(88, 28, 135, 0.2); 
   padding: 15px; 
   border-radius: 12px; 
-  border: 1px solid rgba(168, 85, 247, 0.2); 
+  border: 1px solid rgba(168, 85, 247, 0.25); 
 }
 
 .leaderboard-title { 
   text-align: center; 
   font-size: 11px; 
   color: #c084fc; 
-  font-weight: bold;
-  margin-bottom: 10px; 
+  font-weight: 900;
+  margin-bottom: 12px; 
   text-transform: uppercase;
+  font-style: italic;
 }
 
 .leaderboard-item { 
   display: flex; 
   justify-content: space-between; 
   font-size: 12px; 
-  padding: 5px 0; 
+  padding: 6px 0; 
   border-bottom: 1px solid rgba(168, 85, 247, 0.1); 
 }
 
-/* İmza Alanı */
+/* Purpleguy İmzası */
 .footer-sig { 
-  margin-top: 40px; 
+  margin-top: 45px; 
   font-size: 10px; 
-  opacity: 0.4; 
-  letter-spacing: 5px; 
+  opacity: 0.35; 
+  letter-spacing: 6px; 
   font-weight: bold; 
   text-transform: uppercase;
 }
