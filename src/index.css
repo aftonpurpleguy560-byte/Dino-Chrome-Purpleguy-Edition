@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tablet ve PWA Temel Ayarları */
 body { 
   margin: 0; 
   background: #000; 
@@ -12,6 +13,7 @@ body {
   height: 100vh;
 }
 
+/* Ana Konteynır */
 .game-container { 
   display: flex; 
   flex-direction: column; 
@@ -21,6 +23,7 @@ body {
   width: 100vw;
 }
 
+/* HI ve Canlı Skor Paneli */
 .score-board { 
   width: 100%; 
   max-width: 800px; 
@@ -32,6 +35,7 @@ body {
   margin-bottom: 10px;
 }
 
+/* Oyun Alanı ve Siyah Ekran Çözümü */
 .canvas-wrapper { 
   position: relative; 
   width: 100%; 
@@ -44,19 +48,38 @@ body {
 
 canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 
+/* Menü Katmanı */
 .menu-overlay { 
   position: absolute; 
   inset: 0; 
-  background: rgba(0, 0, 0, 0.9); 
+  background: rgba(0, 0, 0, 0.95); 
   display: flex; 
   flex-direction: column; 
   align-items: center; 
   justify-content: center; 
   z-index: 100;
+  backdrop-filter: blur(5px);
 }
 
-.menu-title { font-size: 2.5rem; font-weight: 900; italic; margin-bottom: 20px; text-shadow: 0 0 20px #7e22ce; }
+/* Mor Neon Başlık */
+.menu-title { 
+  font-size: 2.5rem; 
+  font-weight: 900; 
+  font-style: italic; 
+  margin-bottom: 5px; 
+  text-shadow: 0 0 20px #7e22ce;
+  color: #9333ea;
+}
 
+.menu-subtitle {
+  font-size: 10px;
+  color: #581c87;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+/* MOR NEON BUTON (O beyazlıktan kurtuluyoruz) */
 .neon-btn { 
   background: #7e22ce; 
   color: #fff; 
@@ -64,11 +87,48 @@ canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; 
   padding: 15px 50px; 
   border-radius: 50px; 
   font-weight: bold; 
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.5); 
+  font-size: 14px;
+  text-transform: uppercase;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.6); 
   cursor: pointer; 
+  transition: all 0.2s ease;
 }
 
-.leaderboard-card { margin-top: 20px; width: 250px; background: rgba(168, 85, 247, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #3b0764; }
-.leaderboard-title { text-align: center; font-size: 10px; color: #c084fc; margin-bottom: 10px; }
-.leaderboard-item { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 1px solid rgba(168, 85, 247, 0.1); }
-.footer-sig { margin-top: 40px; font-size: 10px; opacity: 0.3; letter-spacing: 5px; font-weight: bold; }
+.neon-btn:active { transform: scale(0.9); box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+
+/* Dünya Sıralaması Kartı */
+.leaderboard-card { 
+  margin-top: 25px; 
+  width: 250px; 
+  background: rgba(88, 28, 135, 0.15); 
+  padding: 15px; 
+  border-radius: 12px; 
+  border: 1px solid rgba(168, 85, 247, 0.2); 
+}
+
+.leaderboard-title { 
+  text-align: center; 
+  font-size: 11px; 
+  color: #c084fc; 
+  font-weight: bold;
+  margin-bottom: 10px; 
+  text-transform: uppercase;
+}
+
+.leaderboard-item { 
+  display: flex; 
+  justify-content: space-between; 
+  font-size: 12px; 
+  padding: 5px 0; 
+  border-bottom: 1px solid rgba(168, 85, 247, 0.1); 
+}
+
+/* İmza Alanı */
+.footer-sig { 
+  margin-top: 40px; 
+  font-size: 10px; 
+  opacity: 0.4; 
+  letter-spacing: 5px; 
+  font-weight: bold; 
+  text-transform: uppercase;
+}
