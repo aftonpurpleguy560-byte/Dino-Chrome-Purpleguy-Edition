@@ -18,16 +18,17 @@ const DinoGame = () => {
     
     const q = query(collection(db, "dino_leaderboard"), orderBy("score", "desc"), limit(5));
     const unsubscribe = onSnapshot(q, (s) => {
-      setLeaderboard(s.docs.map(d => d.data()));
-    }, (err) => console.log("Firebase Sıralama Hatası:", err));
+      setLeaderboard(s.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => console.error("Sıralama hatası:", err));
     return () => unsubscribe();
   }, []);
 
   const start = () => {
-    if(!playerName) { alert("Önce ismini yazmalısın Purpleguy!"); return; }
+    if(!playerName.trim()) { alert("Lütfen ismini yaz, Purpleguy!"); return; }
     localStorage.setItem('pName', playerName);
     gameRef.current = { dino: { x: 50, y: 150, w: 44, h: 47, dy: 0 }, obstacles: [], speed: 6, frame: 0 };
-    setScore(0); setGameState('PLAYING');
+    setScore(0); 
+    setGameState('PLAYING');
   };
 
   useEffect(() => {
@@ -47,12 +48,7 @@ const DinoGame = () => {
         if (g.dino.x < o.x + 25 && g.dino.x + 35 > o.x && g.dino.y < o.y + 40 && g.dino.y + 40 > o.y) {
           setGameState('OVER');
           if (score > highScore) { setHighScore(score); localStorage.setItem('dinoHiScore', score); }
-          // Skoru Firebase'e Gönder
-          addDoc(collection(db, "dino_leaderboard"), { 
-            name: playerName, 
-            score, 
-            timestamp: serverTimestamp() 
-          }).catch(e => console.error("Skor kaydedilemedi:", e));
+          addDoc(collection(db, "dino_leaderboard"), { name: playerName, score, timestamp: serverTimestamp() });
         }
         if (o.x < -50) g.obstacles.splice(i, 1);
       });
@@ -60,42 +56,32 @@ const DinoGame = () => {
       g.rid = requestAnimationFrame(loop);
     };
     loop(); return () => cancelAnimationFrame(gameRef.current.rid);
-  }, [gameState, score, playerName]);
+  }, [gameState, score, playerName, highScore]);
 
   return (
     <div className="game-container" onClick={() => gameState === 'PLAYING' && gameRef.current.dino.y === 150 && (gameRef.current.dino.dy = -12)}>
       <div className="score-board">
-        <span className="text-zinc-500">HI {highScore.toString().padStart(5, '0')}</span>
+        <span className="text-zinc-500 mr-4">HI {highScore.toString().padStart(5, '0')}</span>
         <span>{score.toString().padStart(5, '0')}</span>
       </div>
-
       <div className="canvas-wrapper">
         <canvas ref={canvasRef} width={800} height={200} />
         {gameState !== 'PLAYING' && (
           <div className="menu-overlay">
             <h1 className="menu-title">PURPLEGUY DINO</h1>
-            
-            {/* İsim Giriş Alanı */}
-            <input 
-              type="text" 
-              placeholder="İSMİNİ YAZ..." 
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              className="bg-black border-2 border-purple-800 text-white p-2 rounded-lg my-4 text-center outline-none focus:border-purple-500"
-            />
-
+            <input type="text" placeholder="İSMİNİ YAZ..." value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)} className="name-input" />
             <button onClick={(e) => { e.stopPropagation(); start(); }} className="neon-btn">
               {gameState === 'MENU' ? 'OYUNA BAŞLA' : 'REKORU TAZELE'}
             </button>
-
             <div className="leaderboard-card">
               <p className="leaderboard-title italic">DÜNYA SIRALAMASI</p>
-              {leaderboard.length > 0 ? leaderboard.map((l, i) => (
+              {leaderboard.map((l, i) => (
                 <div key={i} className="leaderboard-item">
-                  <span>{i+1}. {l.name || 'Anonim'}</span>
+                  <span>{i+1}. {l.name}</span>
                   <span className="text-white font-bold">{l.score}</span>
                 </div>
-              )) : <p className="text-[10px] text-center text-zinc-600">Yükleniyor...</p>}
+              ))}
             </div>
           </div>
         )}
@@ -106,3 +92,4 @@ const DinoGame = () => {
 };
 
 export default DinoGame;
+
