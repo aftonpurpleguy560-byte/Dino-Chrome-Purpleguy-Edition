@@ -7,201 +7,92 @@ const DinoGame = () => {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(parseInt(localStorage.getItem('dinoHiScore')) || 0);
   const [leaderboard, setLeaderboard] = useState([]);
-
   const canvasRef = useRef(null);
-  const gameRef = useRef({
-    dino: { x: 50, y: 150, w: 40, h: 40, dy: 0, jump: -12, gravity: 0.6, color: '#A020F0' }, // Mor Dino
-    obstacles: [],
-    speed: 6,
-    frameCount: 0,
-    frameId: null,
-    colors: { // Neon Renk Paleti
-        dino: '#A020F0', // Purpleguy Moru
-        obstacle: '#00FFFF', // Neon Turkuaz
-        ground: '#555555',
-        shadow: '#A020F0'
-    }
-  });
+  const gameRef = useRef({ dino: { x: 50, y: 150, w: 44, h: 47, dy: 0 }, obstacles: [], speed: 6, frame: 0 });
 
-  // Liderlik Tablosu Verisi
+  const sprite = new Image();
+  sprite.crossOrigin = "anonymous";
+  sprite.src = 'https://raw.githubusercontent.com/wayou/t-rex-runner/master/assets/default_100_percent/100-offline-sprite.png';
+
   useEffect(() => {
-    // Brave'in Firebase'i engelleme ihtimaline karşı try-catch
-    try {
-      const q = query(collection(db, "dino_leaderboard"), orderBy("score", "desc"), limit(5));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        setLeaderboard(snapshot.docs.map(doc => doc.data()));
-      });
-      return () => unsubscribe();
-    } catch (e) {
-      console.error("Firebase bağlantı hatası veya Brave tarafından engellendi:", e);
-      // Firebase'siz çalıştırmak için boş bir liderlik tablosu ayarla
-      setLeaderboard([{ name: "Local", score: highScore, signature: "Brave Engelledi" }]);
-    }
-  }, [highScore]); // highScore değiştiğinde leaderboard'ı güncelle
+    const q = query(collection(db, "dino_leaderboard"), orderBy("score", "desc"), limit(5));
+    return onSnapshot(q, (s) => setLeaderboard(s.docs.map(d => d.data())));
+  }, []);
 
-  const startGame = (e) => {
-    if (e) e.stopPropagation(); 
-    gameRef.current.obstacles = [];
-    gameRef.current.speed = 6;
-    gameRef.current.frameCount = 0;
-    setScore(0);
-    setGameState('PLAYING');
+  const start = () => {
+    gameRef.current = { dino: { x: 50, y: 150, w: 44, h: 47, dy: 0 }, obstacles: [], speed: 6, frame: 0 };
+    setScore(0); setGameState('PLAYING');
   };
 
   useEffect(() => {
     if (gameState !== 'PLAYING') return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const g = gameRef.current;
-
-    const update = () => {
-      g.frameCount++;
-
-      // Dino Fiziği
-      g.dino.dy += g.dino.gravity;
-      g.dino.y += g.dino.dy;
+    const ctx = canvasRef.current.getContext('2d');
+    const loop = () => {
+      const g = gameRef.current; g.frame++;
+      g.dino.dy += 0.6; g.dino.y += g.dino.dy;
       if (g.dino.y > 150) { g.dino.y = 150; g.dino.dy = 0; }
-
-      // Engel Oluşturma (Tamamen kodla çiziliyor)
-      if (g.frameCount % 100 === 0) {
-        const type = Math.random() > 0.5 ? 'CACTUS' : 'BIRD';
-        let obstacle = { x: 800, type: type, color: g.colors.obstacle };
-        
-        if (type === 'CACTUS') {
-            obstacle.w = 20; obstacle.h = 40; obstacle.y = 160 - obstacle.h;
-        } else { // Bird
-            obstacle.w = 30; obstacle.h = 20; obstacle.y = Math.random() < 0.5 ? 100 : 130;
-        }
-        g.obstacles.push(obstacle);
-      }
+      
+      // Engel Oluşturma (Bug Çözümü: 800px mesafede başlatma)
+      if (g.frame % 100 === 0) g.obstacles.push({ x: 800, y: 155, w: 34, h: 50 });
 
       ctx.clearRect(0, 0, 800, 200);
-
-      // --- Zemin Çizgisi (Neon) ---
-      ctx.beginPath();
-      ctx.moveTo(0, 160);
-      ctx.lineTo(800, 160);
-      ctx.strokeStyle = g.colors.ground;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // --- NEON DİNOZOR ÇİZİMİ (Kodla!) ---
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = g.colors.shadow;
-      ctx.fillStyle = g.colors.dino;
-      ctx.fillRect(g.dino.x, g.dino.y, g.dino.w, g.dino.h);
-      ctx.shadowBlur = 0; // Gölgeyi sıfırla ki diğerleri etkilenmesin
-
-      // Engelleri Güncelle ve Çiz (Neon)
-      g.obstacles.forEach((obs, i) => {
-        obs.x -= g.speed;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = obs.color;
-        ctx.fillStyle = obs.color;
-        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-        ctx.shadowBlur = 0;
+      // Dino Çizimi (Animasyonlu)
+      ctx.drawImage(sprite, (Math.floor(g.frame/5)%2?1854:1942), 2, 88, 94, g.dino.x, g.dino.y, 44, 47);
+      
+      g.obstacles.forEach((o, i) => {
+        o.x -= g.speed; 
+        ctx.drawImage(sprite, 446, 2, 90, 90, o.x, o.y, 34, 50); // Kaktüs Sprite
 
         // Çarpışma Kontrolü
-        if (g.dino.x < obs.x + obs.w && 
-            g.dino.x + g.dino.w > obs.x && 
-            g.dino.y < obs.y + obs.h && 
-            g.dino.y + g.dino.h > obs.y) {
-          
-          setGameState('GAMEOVER');
-          if (score > highScore) {
-            setHighScore(score);
-            localStorage.setItem('dinoHiScore', score.toString());
-          }
-          // Firebase'e sadece Brave engellemediyse kaydet
-          try {
-            addDoc(collection(db, "dino_leaderboard"), {
-              name: "Efe",
-              score: score,
-              signature: "Purpleguy © 2026 - tablet power",
-              timestamp: serverTimestamp()
-            });
-          } catch (e) { console.log("Skor Firebase'e kaydedilemedi (Brave engeli)."); }
+        if (g.dino.x < o.x + 24 && g.dino.x + 34 > o.x && g.dino.y < o.y + 40 && g.dino.y + 40 > o.y) {
+          setGameState('OVER');
+          if (score > highScore) { setHighScore(score); localStorage.setItem('dinoHiScore', score); }
+          addDoc(collection(db, "dino_leaderboard"), { name: "Efe", score, timestamp: serverTimestamp() });
         }
-        if (obs.x + obs.w < 0) g.obstacles.splice(i, 1);
+        if (o.x < -50) g.obstacles.splice(i, 1);
       });
-
-      setScore(s => s + 1);
-      g.speed += 0.001;
-      g.frameId = requestAnimationFrame(update);
+      
+      setScore(s => s + 1); g.speed += 0.001;
+      g.rid = requestAnimationFrame(loop);
     };
-
-    update();
-    return () => cancelAnimationFrame(g.frameId);
-  }, [gameState, score, highScore]);
-
-  // Klavye ve Dokunmatik Kontroller
-  useEffect(() => {
-    const handleAction = (e) => {
-      // Sadece 'Space' veya 'ArrowUp' için klavye olayı dinle
-      if (e.type === 'keydown' && (e.code !== 'Space' && e.code !== 'ArrowUp')) return;
-
-      if (gameState === 'PLAYING' && gameRef.current.dino.y > 140) {
-        gameRef.current.dino.dy = gameRef.current.dino.jump;
-      } else if (gameState !== 'PLAYING') {
-        startGame();
-      }
-    };
-
-    window.addEventListener('keydown', handleAction);
-    // Canvas veya ekran tıklaması için
-    const canvasElement = canvasRef.current;
-    if (canvasElement) {
-        canvasElement.addEventListener('click', handleAction);
-    }
-    
-    return () => {
-        window.removeEventListener('keydown', handleAction);
-        if (canvasElement) {
-            canvasElement.removeEventListener('click', handleAction);
-        }
-    };
+    loop(); return () => cancelAnimationFrame(gameRef.current.rid);
   }, [gameState]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-purple-500 font-mono select-none overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-purple-500 font-mono italic" 
+         onClick={() => gameState === 'PLAYING' && gameRef.current.dino.y === 150 && (gameRef.current.dino.dy = -12)}>
       
-      {/* ÜST PANEL */}
-      <div className="mb-6 flex gap-12 text-lg font-bold">
-        <span className="text-zinc-600 italic">HI {highScore.toString().padStart(5, '0')}</span>
-        <span className="text-white">{score.toString().padStart(5, '0')}</span>
-      </div>
-
-      <div className="relative w-full max-w-3xl aspect-[4/1] bg-zinc-950 border-y-2 border-purple-900/40 shadow-2xl">
-        <canvas ref={canvasRef} width={800} height={200} className="w-full h-full bg-gradient-to-t from-gray-900 to-black" />
-
-        {/* ANA MENÜ VE SKOR TABLOSU */}
+      <div className="mb-4 text-lg font-bold">HI {highScore.toString().padStart(5, '0')} | SCORE {score.toString().padStart(5, '0')}</div>
+      
+      <div className="relative border-2 border-purple-900 bg-zinc-950 overflow-hidden shadow-[0_0_50px_rgba(160,32,240,0.2)]">
+        <canvas ref={canvasRef} width={800} height={200} className="w-full h-auto" />
+        
+        {/* ANA MENÜ TASARIMI */}
         {gameState !== 'PLAYING' && (
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 z-[100]">
-            <h1 className="text-4xl font-black mb-6 text-purple-600 tracking-widest animate-pulse">PURPLEGUY DINO</h1>
+          <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-4 z-50">
+            <h1 className="text-4xl font-black text-purple-600 mb-2 italic tracking-tighter">PURPLEGUY DINO</h1>
+            <p className="text-[10px] text-zinc-500 mb-6 uppercase tracking-widest">Brave Edition - Tablet Power</p>
             
-            <button 
-              onClick={startGame}
-              className="mb-8 px-14 py-3 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-full transition-all active:scale-95 shadow-[0_0_30px_rgba(160,32,240,0.4)]">
+            <button onClick={(e) => { e.stopPropagation(); start(); }} 
+                    className="px-14 py-3 bg-purple-700 hover:bg-purple-600 text-white font-black rounded-full shadow-lg shadow-purple-500/50 mb-6 transition-transform active:scale-95">
               {gameState === 'MENU' ? 'BAŞLA' : 'TEKRAR DENE'}
             </button>
 
-            <div className="w-full max-w-xs bg-purple-950/20 border border-purple-800/30 rounded-xl p-4">
-              <h3 className="text-[10px] text-center mb-3 text-purple-400 font-bold tracking-[0.3em]">DÜNYA SKORLARI</h3>
-              {leaderboard.map((item, i) => (
-                <div key={i} className="flex justify-between text-[12px] mb-2 px-2 border-b border-purple-900/20 last:border-0 pb-1">
-                  <span className="text-zinc-400">{i+1}. {item.name}</span>
-                  <span className="text-white font-bold">{item.score}</span>
+            <div className="w-48 bg-purple-950/20 border border-purple-900/40 rounded-lg p-3">
+              <p className="text-[9px] text-center mb-2 text-purple-300 font-bold uppercase">Liderlik Tablosu</p>
+              {leaderboard.map((l, i) => (
+                <div key={i} className="flex justify-between text-[11px] text-zinc-400 border-b border-purple-900/10 mb-1">
+                  <span>{i+1}. {l.name}</span><span className="text-white font-bold">{l.score}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
       </div>
-
-      <div className="mt-8">
-        <p className="text-[10px] text-purple-900 font-bold tracking-[0.5em] uppercase">Purpleguy © 2026 - tablet power</p>
-      </div>
+      
+      <footer className="mt-8 text-[10px] tracking-[0.5em] opacity-30 uppercase font-bold">
+        Purpleguy © 2026 - tablet power [cite: 2026-02-01]
+      </footer>
     </div>
   );
 };
