@@ -1,0 +1,16 @@
+{
+  "short_name": "PurpleDino",
+  "name": "Purpleguy Dino: Tablet Edition",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/wayou/t-rex-runner/master/assets/default_100_percent/100-offline-sprite.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#000000"
+}
+
