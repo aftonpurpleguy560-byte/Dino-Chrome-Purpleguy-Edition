@@ -1,145 +1,108 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-/* Temel Arka Plan ve Tablet Sabitleme */
-body { 
-  margin: 0; 
-  background-color: #000 !important; 
-  color: #a855f7; 
-  font-family: 'Courier New', monospace; 
-  overflow: hidden; 
-  touch-action: none; 
+body {
+  margin: 0;
+  background-color: black !important; /* Arka plan hep siyah [cite: 2026-01-27] */
+  color: #a855f7;
+  font-family: 'Courier New', Courier, monospace;
+  overflow: hidden;
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   height: 100vh;
-  width: 100vw;
+  position: relative;
 }
 
-/* Ana Oyun Konteynırı */
-.game-container { 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: center; 
-  height: 100vh; 
-  width: 100vw;
-  background-color: #000;
-  user-select: none;
+.canvas-wrapper {
+  position: relative;
+  border-bottom: 2px solid #a855f7;
+  background: #09090b;
 }
 
-/* HI ve Mevcut Skor Paneli */
-.score-board { 
-  width: 100%; 
-  max-width: 800px; 
-  display: flex; 
-  justify-content: space-between; 
-  padding: 0 20px; 
-  font-weight: bold; 
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-  text-transform: uppercase;
+.menu-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 }
 
-/* Oyun Sahnesi (Canvas) Çerçevesi */
-.canvas-wrapper { 
-  position: relative; 
-  width: 100%; 
-  max-width: 800px; 
-  aspect-ratio: 4/1;
-  background: #050505; 
-  border-top: 2px solid #3b0764; 
-  border-bottom: 2px solid #3b0764; 
-  box-shadow: 0 0 50px rgba(168, 85, 247, 0.1);
+.menu-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #d8b4fe;
+  text-shadow: 0 0 15px #a855f7;
+  margin-bottom: 1rem;
 }
 
-canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
-
-/* Mor Menü Katmanı */
-.menu-overlay { 
-  position: absolute; 
-  inset: 0; 
-  background: rgba(0, 0, 0, 0.95); 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: center; 
-  z-index: 100;
-  backdrop-filter: blur(8px);
+.name-input {
+  background: #18181b;
+  border: 2px solid #a855f7;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  outline: none;
 }
 
-/* Başlık ve Alt Yazı */
-.menu-title { 
-  font-size: 2.8rem; 
-  font-weight: 900; 
-  font-style: italic; 
-  margin-bottom: 0; 
-  text-shadow: 0 0 20px #7e22ce;
-  color: #9333ea;
-  letter-spacing: -2px;
+.neon-btn {
+  background: #a855f7;
+  color: white;
+  padding: 12px 30px;
+  border-radius: 9999px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
 }
 
-.menu-subtitle {
-  font-size: 10px;
-  color: #581c87;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  margin-bottom: 25px;
+.neon-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px #a855f7;
+}
+
+.leaderboard-card {
+  margin-top: 20px;
+  width: 250px;
+  background: #18181b;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #3f3f46;
+}
+
+.leaderboard-item {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #27272a;
+  padding: 5px 0;
+  font-size: 0.9rem;
+}
+
+.score-board {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 1.5rem;
   font-weight: bold;
 }
 
-/* MOR NEON BUTON - Beyazlığı bitiren asıl kısım */
-.neon-btn { 
-  background: #7e22ce !important; 
-  color: #fff !important; 
-  border: none !important; 
-  padding: 16px 55px; 
-  border-radius: 50px; 
-  font-weight: 900; 
-  font-size: 15px;
-  text-transform: uppercase;
-  box-shadow: 0 0 25px rgba(168, 85, 247, 0.7); 
-  cursor: pointer; 
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.neon-btn:active { 
-  transform: scale(0.92); 
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); 
-}
-
-/* Dünya Sıralaması Listesi */
-.leaderboard-card { 
-  margin-top: 30px; 
-  width: 260px; 
-  background: rgba(88, 28, 135, 0.2); 
-  padding: 15px; 
-  border-radius: 12px; 
-  border: 1px solid rgba(168, 85, 247, 0.25); 
-}
-
-.leaderboard-title { 
-  text-align: center; 
-  font-size: 11px; 
-  color: #c084fc; 
-  font-weight: 900;
-  margin-bottom: 12px; 
-  text-transform: uppercase;
-  font-style: italic;
-}
-
-.leaderboard-item { 
-  display: flex; 
-  justify-content: space-between; 
-  font-size: 12px; 
-  padding: 6px 0; 
-  border-bottom: 1px solid rgba(168, 85, 247, 0.1); 
-}
-
-/* Purpleguy İmzası */
-.footer-sig { 
-  margin-top: 45px; 
-  font-size: 10px; 
-  opacity: 0.35; 
-  letter-spacing: 6px; 
-  font-weight: bold; 
-  text-transform: uppercase;
+.footer-sig {
+  position: fixed;
+  bottom: 10px;
+  font-size: 0.8rem;
+  color: #71717a;
 }
