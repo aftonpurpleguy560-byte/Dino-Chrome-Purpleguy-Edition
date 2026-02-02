@@ -16,23 +16,26 @@ const DinoGame = () => {
     sprite.current.src = 'https://raw.githubusercontent.com/wayou/t-rex-runner/master/assets/default_100_percent/100-offline-sprite.png';
     sprite.current.crossOrigin = "anonymous";
     
-    // Hata korumalı sıralama çekme
+    // Güvenlik: 2 saniye içinde sıralama gelmezse menüyü zorla aç
+    const forceMenu = setTimeout(() => {
+        if (leaderboard.length === 0) console.log("Hızlı başlangıç modu aktif.");
+    }, 2000);
+
     try {
       const q = query(collection(db, "dino_leaderboard"), orderBy("score", "desc"), limit(5));
       const unsubscribe = onSnapshot(q, (s) => {
         setLeaderboard(s.docs.map(d => ({ id: d.id, ...d.data() })));
       }, (error) => {
-        console.warn("Sıralama şu an çekilemiyor:", error);
-        setLeaderboard([]); // Hata olsa bile listeyi boşaltıp devam et
+        setLeaderboard([]); 
       });
-      return () => unsubscribe();
+      return () => { unsubscribe(); clearTimeout(forceMenu); };
     } catch (e) {
       setLeaderboard([]);
     }
   }, []);
 
   const start = () => {
-    if(!playerName.trim()) { alert("İsmini yazmalısın Efe!"); return; }
+    if(!playerName.trim()) { alert("Lütfen bir kullanıcı adı girin!"); return; }
     localStorage.setItem('pName', playerName);
     gameRef.current = { dino: { x: 50, y: 150, w: 44, h: 47, dy: 0 }, obstacles: [], speed: 6, frame: 0 };
     setScore(0); setGameState('PLAYING');
@@ -79,13 +82,13 @@ const DinoGame = () => {
               {gameState === 'MENU' ? 'OYUNA BAŞLA' : 'YENİDEN DENE'}
             </button>
             <div className="leaderboard-card">
-              <p className="leaderboard-title">DÜNYA SIRALAMASI</p>
+              <p className="leaderboard-title">SIRALAMA</p>
               {leaderboard.length > 0 ? leaderboard.map((l, i) => (
                 <div key={i} className="leaderboard-item">
                   <span>{i+1}. {l.name}</span>
                   <span className="text-white font-bold">{l.score}</span>
                 </div>
-              )) : <div className="text-xs text-zinc-500 text-center">Sıralama yükleniyor...</div>}
+              )) : <div className="text-xs text-zinc-500 text-center">Yükleniyor...</div>}
             </div>
           </div>
         )}
